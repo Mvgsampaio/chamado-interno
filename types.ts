@@ -23,8 +23,10 @@ export interface User {
   name: string;
   username: string;
   email: string;
+  sector: string;
   password?: string;
   role: UserRole;
+  mustResetPassword?: boolean;
 }
 
 export interface Ticket {
@@ -44,3 +46,7 @@ export type AuthState = {
   user: User | null;
   isAuthenticated: boolean;
 };
+
+export interface AppConfig {
+  is2FAEnabled: boolean;
+}

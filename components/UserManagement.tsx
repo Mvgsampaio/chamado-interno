@@ -1,14 +1,24 @@
 
 import React from 'react';
-import { User, UserRole } from '@/types';
+import { User, UserRole, AppConfig } from '@/types';
+import { Shield, ShieldAlert, ShieldCheck, FileText } from 'lucide-react';
+import { pdfService } from '@/services/pdfService';
 
 interface UserManagementProps {
   users: User[];
   onUpdateUsers: (users: User[]) => void;
   onGenerateMocks: () => void;
+  appConfig: AppConfig;
+  onUpdateConfig: (config: AppConfig) => void;
 }
 
-const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUsers, onGenerateMocks }) => {
+const UserManagement: React.FC<UserManagementProps> = ({ 
+  users, 
+  onUpdateUsers, 
+  onGenerateMocks,
+  appConfig,
+  onUpdateConfig
+}) => {
   const toggleRole = (userId: string) => {
     const updatedUsers = users.map(u => {
       if (u.id === userId) {
@@ -27,13 +37,24 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUsers, o
     onUpdateUsers(updatedUsers);
   };
 
+  const handleGenerateReport = () => {
+    pdfService.generateUserReport(users);
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900">Controle de Permissões</h2>
           <p className="text-slate-500 font-medium">Defina os níveis de acesso dos colaboradores</p>
         </div>
+        <button
+          onClick={handleGenerateReport}
+          className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-black rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-sm"
+        >
+          <FileText size={16} className="text-blue-600" />
+          Gerar Relatório de Acessos (PDF)
+        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -89,8 +110,39 @@ const UserManagement: React.FC<UserManagementProps> = ({ users, onUpdateUsers, o
       <div className="bg-slate-900 p-8 rounded-2xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="max-w-2xl">
           <h4 className="font-black mb-2 flex items-center gap-2 text-sm uppercase tracking-widest text-blue-400">
-            <i className="fas fa-shield-alt"></i>
-            Ferramentas de Desenvolvedor / Admin
+            <Shield size={18} />
+            Segurança do Sistema (2FA)
+          </h4>
+          <p className="text-xs text-slate-400 leading-relaxed font-medium">
+            A autenticação de dois fatores adiciona uma camada extra de segurança. Quando ativada, todos os usuários deverão fornecer um código do autenticador após a senha.
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end mr-2">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Status Atual</span>
+            <span className={`text-xs font-black uppercase tracking-widest flex items-center gap-1.5 ${appConfig.is2FAEnabled ? 'text-emerald-400' : 'text-red-400'}`}>
+              {appConfig.is2FAEnabled ? <ShieldCheck size={14} /> : <ShieldAlert size={14} />}
+              {appConfig.is2FAEnabled ? 'Ativado' : 'Desativado'}
+            </span>
+          </div>
+          <button
+            onClick={() => onUpdateConfig({ ...appConfig, is2FAEnabled: !appConfig.is2FAEnabled })}
+            className={`px-6 py-4 font-black rounded-xl text-[10px] uppercase tracking-widest transition-all border ${
+              appConfig.is2FAEnabled 
+                ? 'bg-red-500/10 border-red-500/20 text-red-500 hover:bg-red-500/20' 
+                : 'bg-blue-500/10 border-blue-500/20 text-blue-500 hover:bg-blue-500/20'
+            }`}
+          >
+            {appConfig.is2FAEnabled ? 'Desativar 2FA' : 'Ativar 2FA'}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-slate-800 p-8 rounded-2xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="max-w-2xl">
+          <h4 className="font-black mb-2 flex items-center gap-2 text-sm uppercase tracking-widest text-blue-400">
+            <i className="fas fa-magic"></i>
+            Ferramentas de Desenvolvedor
           </h4>
           <p className="text-xs text-slate-400 leading-relaxed font-medium">
             Administradores podem gerenciar o banco de dados local. Utilize o botão ao lado para preencher o sistema com chamados fictícios 

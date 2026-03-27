@@ -1,34 +1,43 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Ticket, UserRole, AuthState, TicketStatus, HistoryEntry } from '@/types';
 import { storage } from '@/services/storage';
 import LoginForm from '@/components/Auth/LoginForm';
-import RegisterForm from '@/components/Auth/RegisterForm';
+import PasswordReset from '@/components/Auth/PasswordReset';
 import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
 import UserManagement from '@/components/UserManagement';
+import UserList from '@/components/UserList';
 
 const App: React.FC = () => {
-  const [auth, setAuth] = useState<AuthState>({ user: null, isAuthenticated: false });
-  const [view, setView] = useState<'login' | 'register' | 'dashboard' | 'users'>('login');
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-
-  // Initialize
-  useEffect(() => {
+  const [auth, setAuth] = useState<AuthState>(() => {
+    const session = storage.getCurrentSession();
+    return session ? { user: session, isAuthenticated: true } : { user: null, isAuthenticated: false };
+  });
+  const [view, setView] = useState<'login' | 'register' | 'dashboard' | 'users' | 'user-list' | 'reset-password'>(() => {
     const session = storage.getCurrentSession();
     if (session) {
-      setAuth({ user: session, isAuthenticated: true });
-      setView('dashboard');
+      return session.mustResetPassword ? 'reset-password' : 'dashboard';
     }
-    setTickets(storage.getTickets());
-    setUsers(storage.getUsers());
+    return 'login';
+  });
+  const [tickets, setTickets] = useState<Ticket[]>(() => storage.getTickets());
+  const [users, setUsers] = useState<User[]>(() => storage.getUsers());
+  const [appConfig, setAppConfig] = useState<AppConfig>(() => storage.getAppConfig());
+
+  // No longer need the initialization effect if we use lazy initializers
+  useEffect(() => {
+    // This can be used for other side effects if needed
   }, []);
 
   const handleLogin = (user: User) => {
     setAuth({ user, isAuthenticated: true });
     storage.setSession(user);
-    setView('dashboard');
+    if (user.mustResetPassword) {
+      setView('reset-password');
+    } else {
+      setView('dashboard');
+    }
   };
 
   const handleLogout = () => {
@@ -45,6 +54,31 @@ const App: React.FC = () => {
   const updateUsers = (newUsers: User[]) => {
     setUsers(newUsers);
     storage.saveUsers(newUsers);
+  };
+
+  const handlePasswordReset = (newPassword: string) => {
+    if (!auth.user) return;
+    
+    const updatedUsers = users.map(u => {
+      if (u.id === auth.user!.id) {
+        return { ...u, password: newPassword, mustResetPassword: false };
+      }
+      return u;
+    });
+    
+    updateUsers(updatedUsers);
+    
+    // Update session
+    const updatedUser = { ...auth.user, password: newPassword, mustResetPassword: false };
+    setAuth({ user: updatedUser, isAuthenticated: true });
+    storage.setSession(updatedUser);
+    setView('dashboard');
+    alert('Senha redefinida com sucesso! Bem-vindo ao sistema.');
+  };
+
+  const updateConfig = (newConfig: AppConfig) => {
+    setAppConfig(newConfig);
+    storage.saveAppConfig(newConfig);
   };
 
   const generateMockTickets = () => {
@@ -150,19 +184,13 @@ const App: React.FC = () => {
 
   if (!auth.isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        {view === 'login' ? (
-          <LoginForm 
-            onLogin={handleLogin} 
-            onSwitchToRegister={() => setView('register')} 
-          />
-        ) : (
-          <RegisterForm 
-            onRegisterSuccess={() => setView('login')} 
-            onSwitchToLogin={() => setView('login')} 
-          />
-        )}
-      </div>
+      <LoginForm onLogin={handleLogin} is2FAEnabled={appConfig.is2FAEnabled} />
+    );
+  }
+
+  if (view === 'reset-password' && auth.user) {
+    return (
+      <PasswordReset user={auth.user} onResetComplete={handlePasswordReset} />
     );
   }
 
@@ -170,7 +198,7 @@ const App: React.FC = () => {
     <Layout 
       user={auth.user!} 
       onLogout={handleLogout} 
-      onNavigate={(page) => setView(page as any)}
+      onNavigate={(page) => setView(page as 'login' | 'register' | 'dashboard' | 'users' | 'user-list' | 'reset-password')}
       currentPage={view}
     >
       {view === 'dashboard' && (
@@ -181,11 +209,19 @@ const App: React.FC = () => {
           onUpdateTicket={handleUpdateTicket}
         />
       )}
+      {view === 'user-list' && auth.user?.role === UserRole.ADMIN && (
+        <UserList 
+          users={users} 
+          onUpdateUsers={updateUsers}
+        />
+      )}
       {view === 'users' && auth.user?.role === UserRole.ADMIN && (
         <UserManagement 
           users={users} 
           onUpdateUsers={updateUsers}
           onGenerateMocks={generateMockTickets}
+          appConfig={appConfig}
+          onUpdateConfig={updateConfig}
         />
       )}
     </Layout>

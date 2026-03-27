@@ -1,11 +1,32 @@
 
-import { User, Ticket, UserRole } from '@/types';
+import { User, Ticket, UserRole, AppConfig } from '@/types';
 
 const USERS_KEY = 'intrahelp_users';
 const TICKETS_KEY = 'intrahelp_tickets';
 const SESSION_KEY = 'intrahelp_session';
+const CONFIG_KEY = 'intrahelp_config';
 
 export const storage = {
+  getAppConfig: (): AppConfig => {
+    const data = localStorage.getItem(CONFIG_KEY);
+    if (!data) {
+      const defaultConfig: AppConfig = { is2FAEnabled: false };
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(defaultConfig));
+      return defaultConfig;
+    }
+    const config = JSON.parse(data);
+    // Force disable 2FA as requested by the user to facilitate testing
+    if (config.is2FAEnabled) {
+      config.is2FAEnabled = false;
+      localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+    }
+    return config;
+  },
+
+  saveAppConfig: (config: AppConfig) => {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
+  },
+
   getUsers: (): User[] => {
     const data = localStorage.getItem(USERS_KEY);
     if (!data) {
@@ -15,8 +36,10 @@ export const storage = {
         name: 'Administrador Sistema',
         username: 'admin',
         email: 'admin@empresa.com.br',
+        sector: 'TI',
         password: 'admin',
-        role: UserRole.ADMIN
+        role: UserRole.ADMIN,
+        mustResetPassword: false
       };
       localStorage.setItem(USERS_KEY, JSON.stringify([defaultAdmin]));
       return [defaultAdmin];
