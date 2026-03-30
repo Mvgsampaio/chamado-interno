@@ -33,8 +33,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, is2FAEnabled }) => {
     // Simulate a small delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const users = storage.getUsers();
-    const user = users.find(u => (u.username === identifier || u.email === identifier) && u.password === password);
+    const user = await storage.login(identifier, password);
 
     if (user) {
       if (is2FAEnabled) {

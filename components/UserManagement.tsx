@@ -1,12 +1,13 @@
 
 import React from 'react';
 import { User, UserRole, AppConfig } from '@/types';
-import { Shield, ShieldAlert, ShieldCheck, FileText } from 'lucide-react';
+import { Shield, ShieldAlert, ShieldCheck, FileText, Key } from 'lucide-react';
 import { pdfService } from '@/services/pdfService';
 
 interface UserManagementProps {
   users: User[];
-  onUpdateUsers: (users: User[]) => void;
+  onUpdateUser: (userId: string, updates: Partial<User>) => void;
+  onResetPassword: (userId: string) => void;
   onGenerateMocks: () => void;
   appConfig: AppConfig;
   onUpdateConfig: (config: AppConfig) => void;
@@ -14,27 +15,25 @@ interface UserManagementProps {
 
 const UserManagement: React.FC<UserManagementProps> = ({ 
   users, 
-  onUpdateUsers, 
+  onUpdateUser, 
+  onResetPassword,
   onGenerateMocks,
   appConfig,
   onUpdateConfig
 }) => {
   const toggleRole = (userId: string) => {
-    const updatedUsers = users.map(u => {
-      if (u.id === userId) {
-        // Prevent accidental lockout of all admins (simple check)
-        if (u.username === 'admin' && u.role === UserRole.ADMIN) {
-          alert('Não é possível remover o nível do administrador principal.');
-          return u;
-        }
-        return {
-          ...u,
-          role: u.role === UserRole.ADMIN ? UserRole.USER : UserRole.ADMIN
-        };
-      }
-      return u;
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    // Prevent accidental lockout of all admins (simple check)
+    if (user.username === 'admin' && user.role === UserRole.ADMIN) {
+      alert('Não é possível remover o nível do administrador principal.');
+      return;
+    }
+
+    onUpdateUser(userId, {
+      role: user.role === UserRole.ADMIN ? UserRole.USER : UserRole.ADMIN
     });
-    onUpdateUsers(updatedUsers);
   };
 
   const handleGenerateReport = () => {
@@ -90,16 +89,25 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={() => toggleRole(user.id)}
-                    className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all border ${
-                      user.role === UserRole.ADMIN 
-                        ? 'text-slate-500 border-slate-200 hover:bg-slate-50' 
-                        : 'text-blue-600 border-blue-200 hover:bg-blue-50'
-                    }`}
-                  >
-                    {user.role === UserRole.ADMIN ? 'Remover Admin' : 'Promover Admin'}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleRole(user.id)}
+                      className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all border ${
+                        user.role === UserRole.ADMIN 
+                          ? 'text-slate-500 border-slate-200 hover:bg-slate-50' 
+                          : 'text-blue-600 border-blue-200 hover:bg-blue-50'
+                      }`}
+                    >
+                      {user.role === UserRole.ADMIN ? 'Remover Admin' : 'Promover Admin'}
+                    </button>
+                    <button
+                      onClick={() => onResetPassword(user.id)}
+                      className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-transparent hover:border-blue-100"
+                      title="Resetar Senha"
+                    >
+                      <Key size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

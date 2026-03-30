@@ -21,13 +21,31 @@ const App: React.FC = () => {
     }
     return 'login';
   });
-  const [tickets, setTickets] = useState<Ticket[]>(() => storage.getTickets());
-  const [users, setUsers] = useState<User[]>(() => storage.getUsers());
-  const [appConfig, setAppConfig] = useState<AppConfig>(() => storage.getAppConfig());
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [appConfig, setAppConfig] = useState<AppConfig>({ is2FAEnabled: false });
+  const [isLoading, setIsLoading] = useState(true);
 
-  // No longer need the initialization effect if we use lazy initializers
   useEffect(() => {
-    // This can be used for other side effects if needed
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const [fetchedTickets, fetchedUsers, fetchedConfig] = await Promise.all([
+          storage.getTickets(),
+          storage.getUsers(),
+          storage.getAppConfig()
+        ]);
+        setTickets(fetchedTickets);
+        setUsers(fetchedUsers);
+        setAppConfig(fetchedConfig);
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const handleLogin = (user: User) => {
@@ -46,42 +64,58 @@ const App: React.FC = () => {
     setView('login');
   };
 
-  const updateTickets = (newTickets: Ticket[]) => {
-    setTickets(newTickets);
-    storage.saveTickets(newTickets);
+  const handleCreateUser = async (user: User) => {
+    await storage.createUser(user);
+    setUsers([...users, user]);
   };
 
-  const updateUsers = (newUsers: User[]) => {
-    setUsers(newUsers);
-    storage.saveUsers(newUsers);
+  const handleUpdateUser = async (userId: string, updates: Partial<User>) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+    const updatedUser = { ...user, ...updates };
+    await storage.updateUser(userId, updatedUser);
+    setUsers(users.map(u => u.id === userId ? updatedUser : u));
   };
 
-  const handlePasswordReset = (newPassword: string) => {
+  const handleDeleteUser = async (userId: string) => {
+    await storage.deleteUser(userId);
+    setUsers(users.filter(u => u.id !== userId));
+  };
+
+  const handleResetPassword = async (userId: string) => {
+    try {
+      const defaultPassword = await storage.resetPassword(userId);
+      alert(`Senha resetada com sucesso! A nova senha provisória é: ${defaultPassword}\nO usuário será obrigado a trocá-la no próximo acesso.`);
+      
+      // Update local state to reflect mustResetPassword: true
+      setUsers(users.map(u => u.id === userId ? { ...u, mustResetPassword: true } : u));
+    } catch (error) {
+      console.error('Erro ao resetar senha:', error);
+      alert('Ocorreu um erro ao resetar a senha.');
+    }
+  };
+
+  const handlePasswordReset = async (newPassword: string) => {
     if (!auth.user) return;
     
-    const updatedUsers = users.map(u => {
-      if (u.id === auth.user!.id) {
-        return { ...u, password: newPassword, mustResetPassword: false };
-      }
-      return u;
-    });
-    
-    updateUsers(updatedUsers);
-    
-    // Update session
     const updatedUser = { ...auth.user, password: newPassword, mustResetPassword: false };
+    await storage.updateUser(auth.user.id, updatedUser);
+    
+    const updatedUsers = users.map(u => u.id === auth.user!.id ? updatedUser : u);
+    setUsers(updatedUsers);
+    
     setAuth({ user: updatedUser, isAuthenticated: true });
     storage.setSession(updatedUser);
     setView('dashboard');
     alert('Senha redefinida com sucesso! Bem-vindo ao sistema.');
   };
 
-  const updateConfig = (newConfig: AppConfig) => {
+  const updateConfig = async (newConfig: AppConfig) => {
     setAppConfig(newConfig);
-    storage.saveAppConfig(newConfig);
+    await storage.saveAppConfig(newConfig);
   };
 
-  const generateMockTickets = () => {
+  const generateMockTickets = async () => {
     if (!auth.user) return;
     
     const sectors = ['TI', 'RH', 'Financeiro', 'Manutenção', 'Logística', 'Vendas'];
@@ -98,14 +132,13 @@ const App: React.FC = () => {
       'Limpeza de mesa solicitada após manutenção de rede'
     ];
 
-    const newMockTickets: Ticket[] = [];
     const statuses = Object.values(TicketStatus);
+    const newMockTickets: Ticket[] = [];
     
-    // Gerar 20 chamados (5 de cada status)
     for (let i = 0; i < 20; i++) {
       const statusIndex = Math.floor(i / 5);
       const currentStatus = statuses[statusIndex];
-      const nextIdNumber = tickets.length + newMockTickets.length + 1;
+      const nextIdNumber = tickets.length + i + 1;
       const sequentialId = `TK-${nextIdNumber.toString().padStart(3, '0')}`;
       
       const ticket: Ticket = {
@@ -116,7 +149,7 @@ const App: React.FC = () => {
         extension: `10${i % 10}`,
         description: `${problems[i % problems.length]} - Referência interna #${i + 100}`,
         status: currentStatus,
-        createdAt: new Date(Date.now() - (i * 3600000)).toISOString(), // Datas variadas nas últimas 20 horas
+        createdAt: new Date(Date.now() - (i * 3600000)).toISOString(),
         history: [{
           id: `HIST-${Date.now()}-${i}`,
           timestamp: new Date().toISOString(),
@@ -125,14 +158,15 @@ const App: React.FC = () => {
         }],
         adminResponse: currentStatus !== TicketStatus.OPEN ? 'Este é um parecer técnico fictício para fins de demonstração do sistema.' : undefined
       };
+      await storage.createTicket(ticket);
       newMockTickets.push(ticket);
     }
 
-    updateTickets([...newMockTickets, ...tickets]);
+    setTickets([...newMockTickets, ...tickets]);
     alert('20 chamados de teste foram gerados com sucesso!');
   };
 
-  const handleCreateTicket = (ticketData: Partial<Ticket>) => {
+  const handleCreateTicket = async (ticketData: Partial<Ticket>) => {
     if (!auth.user) return;
     
     const nextNumber = tickets.length > 0 
@@ -157,20 +191,25 @@ const App: React.FC = () => {
         action: 'Abertura do chamado'
       }]
     };
-    updateTickets([newTicket, ...tickets]);
+    
+    await storage.createTicket(newTicket);
+    setTickets([newTicket, ...tickets]);
   };
 
-  const handleUpdateTicket = (ticketId: string, updates: Partial<Ticket>) => {
+  const handleUpdateTicket = async (ticketId: string, updates: Partial<Ticket>) => {
     if (!auth.user) return;
+    
+    const historyEntry: HistoryEntry = {
+      id: `HIST-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      userName: auth.user!.name,
+      action: updates.status ? `Status alterado para ${updates.status}` : 'Informações atualizadas'
+    };
+
+    await storage.updateTicket(ticketId, { ...updates, historyEntry });
     
     const updatedTickets = tickets.map(t => {
       if (t.id === ticketId) {
-        const historyEntry: HistoryEntry = {
-          id: `HIST-${Date.now()}`,
-          timestamp: new Date().toISOString(),
-          userName: auth.user!.name,
-          action: updates.status ? `Status alterado para ${updates.status}` : 'Informações atualizadas'
-        };
         return {
           ...t,
           ...updates,
@@ -179,8 +218,19 @@ const App: React.FC = () => {
       }
       return t;
     });
-    updateTickets(updatedTickets);
+    setTickets(updatedTickets);
   };
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-600 font-medium">Carregando sistema...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!auth.isAuthenticated) {
     return (
@@ -212,13 +262,16 @@ const App: React.FC = () => {
       {view === 'user-list' && auth.user?.role === UserRole.ADMIN && (
         <UserList 
           users={users} 
-          onUpdateUsers={updateUsers}
+          onCreateUser={handleCreateUser}
+          onDeleteUser={handleDeleteUser}
+          onResetPassword={handleResetPassword}
         />
       )}
       {view === 'users' && auth.user?.role === UserRole.ADMIN && (
         <UserManagement 
           users={users} 
-          onUpdateUsers={updateUsers}
+          onUpdateUser={handleUpdateUser}
+          onResetPassword={handleResetPassword}
           onGenerateMocks={generateMockTickets}
           appConfig={appConfig}
           onUpdateConfig={updateConfig}

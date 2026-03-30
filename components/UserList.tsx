@@ -5,10 +5,12 @@ import { UserPlus, Search, Building2, Mail, Key, Trash2 } from 'lucide-react';
 
 interface UserListProps {
   users: User[];
-  onUpdateUsers: (users: User[]) => void;
+  onCreateUser: (user: User) => void;
+  onDeleteUser: (userId: string) => void;
+  onResetPassword: (userId: string) => void;
 }
 
-const UserList: React.FC<UserListProps> = ({ users, onUpdateUsers }) => {
+const UserList: React.FC<UserListProps> = ({ users, onCreateUser, onDeleteUser, onResetPassword }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [newUser, setNewUser] = useState({
@@ -38,7 +40,7 @@ const UserList: React.FC<UserListProps> = ({ users, onUpdateUsers }) => {
       mustResetPassword: true
     };
 
-    onUpdateUsers([...users, user]);
+    onCreateUser(user);
     setIsAdding(false);
     setNewUser({ name: '', sector: '', email: '', password: '' });
   };
@@ -55,7 +57,7 @@ const UserList: React.FC<UserListProps> = ({ users, onUpdateUsers }) => {
     }
     
     if (confirm(`Tem certeza que deseja excluir o usuário ${user?.name}?`)) {
-      onUpdateUsers(users.filter(u => u.id !== userId));
+      onDeleteUser(userId);
     }
   };
 
@@ -225,13 +227,22 @@ const UserList: React.FC<UserListProps> = ({ users, onUpdateUsers }) => {
                   <div className="text-[10px] text-slate-500">{user.email}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right">
-                  <button
-                    onClick={() => deleteUser(user.id)}
-                    className="p-2 text-slate-400 hover:text-red-600 transition-colors"
-                    title="Excluir Usuário"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => onResetPassword(user.id)}
+                      className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                      title="Resetar Senha"
+                    >
+                      <Key size={18} />
+                    </button>
+                    <button
+                      onClick={() => deleteUser(user.id)}
+                      className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                      title="Excluir Usuário"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
