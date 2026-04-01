@@ -27,6 +27,14 @@ export const storage = {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
   },
 
+  login: async (identifier: string, password: string): Promise<User | null> => {
+    const data = localStorage.getItem(USERS_KEY);
+    if (!data) return null;
+    const users = JSON.parse(data);
+    const user = users.find((u: User) => (u.username === identifier || u.email === identifier) && u.password === password);
+    return user || null;
+  },
+
   getUsers: (): User[] => {
     const data = localStorage.getItem(USERS_KEY);
     if (!data) {
