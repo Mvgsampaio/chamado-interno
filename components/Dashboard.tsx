@@ -71,7 +71,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, tickets, onAddTicket, onUpd
             Dashboard
           </h2>
           <p className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-[0.2em] mt-1">
-            Gestão de Chamados Internos
+            teste
           </p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
