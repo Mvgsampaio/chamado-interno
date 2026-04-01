@@ -8,7 +8,6 @@ interface UserManagementProps {
   users: User[];
   onUpdateUser: (userId: string, updates: Partial<User>) => void;
   onResetPassword: (userId: string) => void;
-  onGenerateMocks: () => void;
   appConfig: AppConfig;
   onUpdateConfig: (config: AppConfig) => void;
 }
@@ -17,7 +16,6 @@ const UserManagement: React.FC<UserManagementProps> = ({
   users, 
   onUpdateUser, 
   onResetPassword,
-  onGenerateMocks,
   appConfig,
   onUpdateConfig
 }) => {
@@ -144,26 +142,6 @@ const UserManagement: React.FC<UserManagementProps> = ({
             {appConfig.is2FAEnabled ? 'Desativar 2FA' : 'Ativar 2FA'}
           </button>
         </div>
-      </div>
-
-      <div className="bg-slate-800 p-8 rounded-2xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="max-w-2xl">
-          <h4 className="font-black mb-2 flex items-center gap-2 text-sm uppercase tracking-widest text-blue-400">
-            <i className="fas fa-magic"></i>
-            Ferramentas de Desenvolvedor
-          </h4>
-          <p className="text-xs text-slate-400 leading-relaxed font-medium">
-            Administradores podem gerenciar o banco de dados local. Utilize o botão ao lado para preencher o sistema com chamados fictícios 
-            e testar o comportamento dos filtros, status e relatórios gerenciais em larga escala.
-          </p>
-        </div>
-        <button
-          onClick={onGenerateMocks}
-          className="whitespace-nowrap px-6 py-4 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all"
-        >
-          <i className="fas fa-magic mr-2"></i>
-          Gerar 20 Chamados de Teste
-        </button>
       </div>
     </div>
   );

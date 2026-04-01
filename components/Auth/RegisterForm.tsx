@@ -50,8 +50,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
     const newUser: User = {
       id: `USR-${Date.now()}`,
       name: formData.name,
-      username: formData.username,
-      email: formData.email,
+      username: formData.username.toLowerCase(),
+      email: formData.email.toLowerCase(),
       password: formData.password,
       role: UserRole.USER
     };

@@ -31,7 +31,11 @@ export const storage = {
     const data = localStorage.getItem(USERS_KEY);
     if (!data) return null;
     const users = JSON.parse(data);
-    const user = users.find((u: User) => (u.username === identifier || u.email === identifier) && u.password === password);
+    const user = users.find((u: User) => 
+      (u.username.toLowerCase() === identifier.toLowerCase() || 
+       u.email.toLowerCase() === identifier.toLowerCase()) && 
+      u.password === password
+    );
     return user || null;
   },
 

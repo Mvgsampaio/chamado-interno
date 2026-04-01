@@ -26,6 +26,15 @@ const App: React.FC = () => {
   const [appConfig, setAppConfig] = useState<AppConfig>({ is2FAEnabled: false });
   const [isLoading, setIsLoading] = useState(true);
 
+  const refreshUsers = async () => {
+    try {
+      const fetchedUsers = await storage.getUsers();
+      setUsers(fetchedUsers);
+    } catch (error) {
+      console.error('Erro ao atualizar lista de usuários:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -115,57 +124,6 @@ const App: React.FC = () => {
     await storage.saveAppConfig(newConfig);
   };
 
-  const generateMockTickets = async () => {
-    if (!auth.user) return;
-    
-    const sectors = ['TI', 'RH', 'Financeiro', 'Manutenção', 'Logística', 'Vendas'];
-    const problems = [
-      'Impressora não reconhece o papel no setor',
-      'Solicitação de acesso à pasta de rede compartilhada',
-      'Computador apresentando lentidão excessiva ao ligar',
-      'Ar condicionado fazendo barulho estranho na sala 3',
-      'Troca de lâmpada queimada no corredor central',
-      'Erro de login no sistema de ponto eletrônico',
-      'Pedido de novo mouse e teclado ergonômico',
-      'Dúvida sobre o preenchimento de relatório de despesas',
-      'Configuração de e-mail corporativo no celular novo',
-      'Limpeza de mesa solicitada após manutenção de rede'
-    ];
-
-    const statuses = Object.values(TicketStatus);
-    const newMockTickets: Ticket[] = [];
-    
-    for (let i = 0; i < 20; i++) {
-      const statusIndex = Math.floor(i / 5);
-      const currentStatus = statuses[statusIndex];
-      const nextIdNumber = tickets.length + i + 1;
-      const sequentialId = `TK-${nextIdNumber.toString().padStart(3, '0')}`;
-      
-      const ticket: Ticket = {
-        id: sequentialId,
-        requesterId: auth.user.id,
-        requesterName: auth.user.name,
-        sector: sectors[i % sectors.length],
-        extension: `10${i % 10}`,
-        description: `${problems[i % problems.length]} - Referência interna #${i + 100}`,
-        status: currentStatus,
-        createdAt: new Date(Date.now() - (i * 3600000)).toISOString(),
-        history: [{
-          id: `HIST-${Date.now()}-${i}`,
-          timestamp: new Date().toISOString(),
-          userName: 'Sistema',
-          action: 'Chamado de teste gerado automaticamente'
-        }],
-        adminResponse: currentStatus !== TicketStatus.OPEN ? 'Este é um parecer técnico fictício para fins de demonstração do sistema.' : undefined
-      };
-      await storage.createTicket(ticket);
-      newMockTickets.push(ticket);
-    }
-
-    setTickets([...newMockTickets, ...tickets]);
-    alert('20 chamados de teste foram gerados com sucesso!');
-  };
-
   const handleCreateTicket = async (ticketData: Partial<Ticket>) => {
     if (!auth.user) return;
     
@@ -237,7 +195,10 @@ const App: React.FC = () => {
       return (
         <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
           <RegisterForm 
-            onRegisterSuccess={() => setView('login')} 
+            onRegisterSuccess={async () => {
+              await refreshUsers();
+              setView('login');
+            }} 
             onSwitchToLogin={() => setView('login')} 
           />
         </div>
@@ -286,7 +247,6 @@ const App: React.FC = () => {
           users={users} 
           onUpdateUser={handleUpdateUser}
           onResetPassword={handleResetPassword}
-          onGenerateMocks={generateMockTickets}
           appConfig={appConfig}
           onUpdateConfig={updateConfig}
         />
