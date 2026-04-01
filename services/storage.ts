@@ -1,5 +1,5 @@
 
-import { User, Ticket, UserRole, AppConfig } from '@/types';
+import { User, Ticket, UserRole, AppConfig, HistoryEntry } from '@/types';
 
 const USERS_KEY = 'intrahelp_users';
 const TICKETS_KEY = 'intrahelp_tickets';
@@ -69,6 +69,31 @@ export const storage = {
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
   },
 
+  createUser: async (user: User): Promise<void> => {
+    const users = storage.getUsers();
+    storage.saveUsers([...users, user]);
+  },
+
+  updateUser: async (userId: string, updates: Partial<User>): Promise<void> => {
+    const users = storage.getUsers();
+    const updatedUsers = users.map(u => u.id === userId ? { ...u, ...updates } : u);
+    storage.saveUsers(updatedUsers);
+  },
+
+  deleteUser: async (userId: string): Promise<void> => {
+    const users = storage.getUsers();
+    const filteredUsers = users.filter(u => u.id !== userId);
+    storage.saveUsers(filteredUsers);
+  },
+
+  resetPassword: async (userId: string): Promise<string> => {
+    const defaultPassword = '123@abc';
+    const users = storage.getUsers();
+    const updatedUsers = users.map(u => u.id === userId ? { ...u, password: defaultPassword, mustResetPassword: true } : u);
+    storage.saveUsers(updatedUsers);
+    return defaultPassword;
+  },
+
   getTickets: (): Ticket[] => {
     const data = localStorage.getItem(TICKETS_KEY);
     return data ? JSON.parse(data) : [];
@@ -76,6 +101,27 @@ export const storage = {
 
   saveTickets: (tickets: Ticket[]) => {
     localStorage.setItem(TICKETS_KEY, JSON.stringify(tickets));
+  },
+
+  createTicket: async (ticket: Ticket): Promise<void> => {
+    const tickets = storage.getTickets();
+    storage.saveTickets([ticket, ...tickets]);
+  },
+
+  updateTicket: async (ticketId: string, updates: Partial<Ticket> & { historyEntry?: HistoryEntry }): Promise<void> => {
+    const tickets = storage.getTickets();
+    const updatedTickets = tickets.map(t => {
+      if (t.id === ticketId) {
+        const { historyEntry, ...rest } = updates;
+        const updatedTicket = { ...t, ...rest };
+        if (historyEntry) {
+          updatedTicket.history = [...t.history, historyEntry];
+        }
+        return updatedTicket;
+      }
+      return t;
+    });
+    storage.saveTickets(updatedTickets);
   },
 
   getCurrentSession: (): User | null => {

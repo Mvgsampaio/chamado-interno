@@ -56,7 +56,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
       role: UserRole.USER
     };
 
-    storage.saveUsers([...users, newUser]);
+    await storage.createUser(newUser);
     setIsSuccess(true);
     
     // Wait for success animation before switching

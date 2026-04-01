@@ -233,8 +233,22 @@ const App: React.FC = () => {
   }
 
   if (!auth.isAuthenticated) {
+    if (view === 'register') {
+      return (
+        <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
+          <RegisterForm 
+            onRegisterSuccess={() => setView('login')} 
+            onSwitchToLogin={() => setView('login')} 
+          />
+        </div>
+      );
+    }
     return (
-      <LoginForm onLogin={handleLogin} is2FAEnabled={appConfig.is2FAEnabled} />
+      <LoginForm 
+        onLogin={handleLogin} 
+        is2FAEnabled={appConfig.is2FAEnabled} 
+        onSwitchToRegister={() => setView('register')}
+      />
     );
   }
 

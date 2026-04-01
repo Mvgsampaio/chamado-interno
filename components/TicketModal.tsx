@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { User, Ticket, UserRole, TicketStatus } from '@/types';
-import { X, FileText, History, Info, Send } from 'lucide-react';
+import { X, FileText, History, Info, Send, Paperclip } from 'lucide-react';
 import SuccessAnimation from './SuccessAnimation';
 
 interface TicketModalProps {
@@ -190,6 +190,17 @@ const TicketModal: React.FC<TicketModalProps> = ({ user, ticket, onClose, onSave
                   </div>
                   <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-slate-900">Abertura de Chamado</p>
                   <p className="text-[9px] sm:text-[10px] mt-2 leading-relaxed">Preencha os campos obrigatorios.<br/>Seu chamado será priorizado pela nossa equipe técnica.</p>
+                  
+                  <div className="mt-8 w-full">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-2xl cursor-pointer bg-white hover:bg-slate-50 transition-all group">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Paperclip className="w-8 h-8 mb-3 text-slate-300 group-hover:text-blue-500 transition-colors" />
+                        <p className="mb-1 text-[10px] sm:text-xs font-bold text-slate-500">Para maiores informações anexe aqui uma imagem</p>
+                        <p className="text-[9px] text-slate-400">PNG, JPG ou PDF (MAX. 5MB)</p>
+                      </div>
+                      <input type="file" className="hidden" accept="image/*,.pdf" />
+                    </label>
+                  </div>
                 </div>
               )}
             </div>

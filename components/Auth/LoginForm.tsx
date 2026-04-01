@@ -16,9 +16,10 @@ declare module 'react' {
 interface LoginFormProps {
   onLogin: (user: User) => void;
   is2FAEnabled: boolean;
+  onSwitchToRegister: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onLogin, is2FAEnabled }) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onLogin, is2FAEnabled, onSwitchToRegister }) => {
   const [step, setStep] = useState<'login' | '2fa-setup' | '2fa-verify'>('login');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -152,6 +153,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, is2FAEnabled }) => {
                     )}
                   </button>
                 </form>
+
+                <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">
+                    Novo colaborador? 
+                    <button 
+                      onClick={onSwitchToRegister}
+                      className="ml-2 text-blue-600 hover:text-blue-800 font-black decoration-2 underline-offset-4 hover:underline"
+                    >
+                      CADASTRE-SE AQUI
+                    </button>
+                  </p>
+                </div>
               </motion.div>
             )}
 
