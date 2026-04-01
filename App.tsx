@@ -238,6 +238,7 @@ const App: React.FC = () => {
         <UserList 
           users={users} 
           onCreateUser={handleCreateUser}
+          onUpdateUser={handleUpdateUser}
           onDeleteUser={handleDeleteUser}
           onResetPassword={handleResetPassword}
         />

@@ -45,7 +45,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, is2FAEnabled, onSwitchTo
         onLogin(user);
       }
     } else {
-      alert('Dados de acesso inválidos. Verifique as informações e tente novamente.');
+      alert('Credenciais inválidas. Use "admin" / "admin" para acesso inicial.');
       setIsSubmitting(false);
     }
   };
