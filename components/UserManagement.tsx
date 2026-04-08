@@ -7,7 +7,7 @@ import { pdfService } from '@/services/pdfService';
 interface UserManagementProps {
   users: User[];
   onUpdateUser: (userId: string, updates: Partial<User>) => void;
-  onResetPassword: (userId: string) => void;
+  onResetPassword: (userId: string, customPassword?: string) => void;
   appConfig: AppConfig;
   onUpdateConfig: (config: AppConfig) => void;
 }
@@ -19,6 +19,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
   appConfig,
   onUpdateConfig
 }) => {
+  const [changingPasswordUser, setChangingPasswordUser] = React.useState<User | null>(null);
+  const [newPassword, setNewPassword] = React.useState('');
+
   const toggleRole = (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (!user) return;
@@ -36,6 +39,15 @@ const UserManagement: React.FC<UserManagementProps> = ({
 
   const handleGenerateReport = () => {
     pdfService.generateUserReport(users);
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changingPasswordUser || !newPassword) return;
+    
+    onResetPassword(changingPasswordUser.id, newPassword);
+    setChangingPasswordUser(null);
+    setNewPassword('');
   };
 
   return (
@@ -99,9 +111,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       {user.role === UserRole.ADMIN ? 'Remover Admin' : 'Promover Admin'}
                     </button>
                     <button
-                      onClick={() => onResetPassword(user.id)}
+                      onClick={() => setChangingPasswordUser(user)}
                       className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-transparent hover:border-blue-100"
-                      title="Resetar Senha"
+                      title="Alterar Senha"
                     >
                       <Key size={16} />
                     </button>
@@ -143,6 +155,54 @@ const UserManagement: React.FC<UserManagementProps> = ({
           </button>
         </div>
       </div>
+
+      {changingPasswordUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100">
+            <div className="p-8 border-b border-slate-100 bg-slate-50">
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight text-slate-900">Alterar Senha</h3>
+              <p className="text-xs text-slate-500 font-medium mt-1">Defina uma nova senha para {changingPasswordUser.name}</p>
+            </div>
+            <form onSubmit={handleChangePassword} className="p-8 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nova Senha</label>
+                <div className="relative">
+                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-600 outline-none transition-all text-slate-900"
+                    placeholder="Digite a nova senha"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <p className="text-[9px] text-slate-400 font-medium italic">* O usuário será obrigado a trocar a senha no primeiro acesso por segurança.</p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChangingPasswordUser(null);
+                    setNewPassword('');
+                  }}
+                  className="flex-1 px-6 py-4 border border-slate-200 text-slate-500 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                >
+                  Confirmar Alteração
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -82,16 +82,19 @@ const App: React.FC = () => {
     setUsers(users.filter(u => u.id !== userId));
   };
 
-  const handleResetPassword = async (userId: string) => {
+  const handleResetPassword = async (userId: string, customPassword?: string) => {
     try {
-      const defaultPassword = await storage.resetPassword(userId);
-      alert(`Senha resetada com sucesso! A nova senha provisória é: ${defaultPassword}\nO usuário será obrigado a trocá-la no próximo acesso.`);
+      const password = customPassword || await storage.resetPassword(userId);
+      if (customPassword) {
+        await storage.updateUser(userId, { password, mustResetPassword: true });
+      }
+      alert(`Senha alterada com sucesso! A nova senha é: ${password}\nO usuário será obrigado a trocá-la no próximo acesso.`);
       
-      // Update local state to reflect mustResetPassword: true
-      setUsers(users.map(u => u.id === userId ? { ...u, mustResetPassword: true } : u));
+      // Update local state to reflect changes
+      setUsers(users.map(u => u.id === userId ? { ...u, password: password, mustResetPassword: true } : u));
     } catch (error) {
-      console.error('Erro ao resetar senha:', error);
-      alert('Ocorreu um erro ao resetar a senha.');
+      console.error('Erro ao alterar senha:', error);
+      alert('Ocorreu um erro ao alterar a senha.');
     }
   };
 

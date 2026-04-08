@@ -45,7 +45,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin, is2FAEnabled, onSwitchTo
         onLogin(user);
       }
     } else {
-      alert('Credenciais inválidas. Use "admin" / "admin" para acesso inicial.');
+      alert('Credenciais inválidas. Use "marcus" / "teste@" para acesso inicial.');
       setIsSubmitting(false);
     }
   };

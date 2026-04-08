@@ -7,11 +7,13 @@ interface UserListProps {
   users: User[];
   onCreateUser: (user: User) => void;
   onDeleteUser: (userId: string) => void;
-  onResetPassword: (userId: string) => void;
+  onResetPassword: (userId: string, customPassword?: string) => void;
 }
 
 const UserList: React.FC<UserListProps> = ({ users, onCreateUser, onDeleteUser, onResetPassword }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [changingPasswordUser, setChangingPasswordUser] = useState<User | null>(null);
+  const [newPassword, setNewPassword] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [newUser, setNewUser] = useState({
     name: '',
@@ -43,6 +45,15 @@ const UserList: React.FC<UserListProps> = ({ users, onCreateUser, onDeleteUser, 
     onCreateUser(user);
     setIsAdding(false);
     setNewUser({ name: '', sector: '', email: '', password: '' });
+  };
+
+  const handleChangePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changingPasswordUser || !newPassword) return;
+    
+    onResetPassword(changingPasswordUser.id, newPassword);
+    setChangingPasswordUser(null);
+    setNewPassword('');
   };
 
   const generateDefaultPassword = () => {
@@ -192,6 +203,54 @@ const UserList: React.FC<UserListProps> = ({ users, onCreateUser, onDeleteUser, 
         </div>
       )}
 
+      {changingPasswordUser && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100">
+            <div className="p-8 border-b border-slate-100 bg-slate-50">
+              <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">Alterar Senha</h3>
+              <p className="text-xs text-slate-500 font-medium mt-1">Defina uma nova senha para {changingPasswordUser.name}</p>
+            </div>
+            <form onSubmit={handleChangePassword} className="p-8 space-y-5">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Nova Senha</label>
+                <div className="relative">
+                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-600 outline-none transition-all"
+                    placeholder="Digite a nova senha"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                  />
+                </div>
+                <p className="text-[9px] text-slate-400 font-medium italic">* O usuário será obrigado a trocar a senha no próximo acesso por segurança.</p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setChangingPasswordUser(null);
+                    setNewPassword('');
+                  }}
+                  className="flex-1 px-6 py-4 border border-slate-200 text-slate-500 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+                >
+                  Confirmar Alteração
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <table className="w-full text-left">
           <thead className="bg-slate-50 border-b border-slate-200">
@@ -229,9 +288,9 @@ const UserList: React.FC<UserListProps> = ({ users, onCreateUser, onDeleteUser, 
                 <td className="px-6 py-4 whitespace-nowrap text-right">
                   <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => onResetPassword(user.id)}
+                      onClick={() => setChangingPasswordUser(user)}
                       className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
-                      title="Resetar Senha"
+                      title="Alterar Senha"
                     >
                       <Key size={18} />
                     </button>
