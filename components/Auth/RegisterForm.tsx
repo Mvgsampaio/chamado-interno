@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User as UserIcon, Mail, Lock, UserPlus, ArrowLeft, AlertCircle, CheckCircle2, Phone } from 'lucide-react';
+import { User as UserIcon, Mail, Lock, UserPlus, ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { storage } from '@/services/storage';
 import { User, UserRole } from '@/types';
 
@@ -15,7 +15,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
     name: '',
     username: '',
     email: '',
-    extension: '',
     password: '',
     confirmPassword: ''
   });
@@ -37,7 +36,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
       return;
     }
 
-    const users = await storage.getUsers();
+    const users = storage.getUsers();
     if (users.some(u => u.email === formData.email)) {
       setError('Este e-mail já está cadastrado no sistema.');
       return;
@@ -51,10 +50,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
     const newUser: User = {
       id: `USR-${Date.now()}`,
       name: formData.name,
-      username: formData.username.toLowerCase(),
-      email: formData.email.toLowerCase(),
-      extension: formData.extension,
-      sector: 'Geral',
+      username: formData.username,
+      email: formData.email,
       password: formData.password,
       role: UserRole.USER
     };
@@ -136,32 +133,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onRegisterSuccess, onSwitch
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 ml-1 flex items-center gap-2">
-              <Phone size={12} className="text-blue-500" />
-              Ramal
+              <Mail size={12} className="text-blue-500" />
+              E-mail
             </label>
             <input
-              type="text"
+              type="email"
+              required
               className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50/50 text-slate-900 font-semibold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300"
-              value={formData.extension}
-              onChange={(e) => setFormData({ ...formData, extension: e.target.value })}
-              placeholder="Ex: 1234"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="seu@email.com"
             />
           </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 ml-1 flex items-center gap-2">
-            <Mail size={12} className="text-blue-500" />
-            E-mail
-          </label>
-          <input
-            type="email"
-            required
-            className="w-full px-4 py-3 rounded-2xl border-2 border-slate-100 bg-slate-50/50 text-slate-900 font-semibold focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            placeholder="seu@email.com"
-          />
         </div>
 
         <div className="space-y-1.5">

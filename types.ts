@@ -24,7 +24,6 @@ export interface User {
   username: string;
   email: string;
   sector: string;
-  extension?: string;
   password?: string;
   role: UserRole;
   mustResetPassword?: boolean;

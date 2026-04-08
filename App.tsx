@@ -26,15 +26,6 @@ const App: React.FC = () => {
   const [appConfig, setAppConfig] = useState<AppConfig>({ is2FAEnabled: false });
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUsers = async () => {
-    try {
-      const fetchedUsers = await storage.getUsers();
-      setUsers(fetchedUsers);
-    } catch (error) {
-      console.error('Erro ao atualizar lista de usuários:', error);
-    }
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
@@ -195,10 +186,7 @@ const App: React.FC = () => {
       return (
         <div className="fixed inset-0 bg-slate-50 flex items-center justify-center p-0 sm:p-4 overflow-y-auto">
           <RegisterForm 
-            onRegisterSuccess={async () => {
-              await refreshUsers();
-              setView('login');
-            }} 
+            onRegisterSuccess={() => setView('login')} 
             onSwitchToLogin={() => setView('login')} 
           />
         </div>
@@ -238,7 +226,6 @@ const App: React.FC = () => {
         <UserList 
           users={users} 
           onCreateUser={handleCreateUser}
-          onUpdateUser={handleUpdateUser}
           onDeleteUser={handleDeleteUser}
           onResetPassword={handleResetPassword}
         />
